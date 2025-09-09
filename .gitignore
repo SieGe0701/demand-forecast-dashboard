@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.env
+.env
+.venv/
+venv/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# Data
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.parquet
+*.h5
+*.db
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Test
+.coverage
+htmlcov/
+
+# Others
+*.bak
+*.swp
+*.tmp
+
+# Environment
+.envrc
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# Models
+models/
+*.joblib
+*.pkl
+
+# Node
+node_modules/
