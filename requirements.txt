@@ -1,1 +1,17 @@
-# Python dependencies
+fastapi
+uvicorn
+pandas
+numpy
+scikit-learn
+joblib
+streamlit
+pytest
+requests
+matplotlib
+seaborn
+gunicorn
+docker
+pre-commit
+black
+isort
+flake8
