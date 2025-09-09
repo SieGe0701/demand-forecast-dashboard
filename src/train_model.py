@@ -53,3 +53,11 @@ def train_and_save_model(
             print(f"  {name}: {imp:.4f}")
     joblib.dump(model, model_path)
     return model, mse
+# ...existing code...
+
+def train_and_validate(train_df: pd.DataFrame, target_col: str = 'units_sold', model_path: str = 'models/model.joblib', model_type: str = 'random_forest', **model_kwargs):
+    """
+    Train model on train_df and validate with a holdout split.
+    Returns trained model and validation MSE.
+    """
+    return train_and_save_model(train_df, target_col, model_path, model_type, **model_kwargs)

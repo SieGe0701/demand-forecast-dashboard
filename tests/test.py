@@ -16,30 +16,33 @@ from src.predict import load_model, predict
 from src.train_model import train_and_save_model
 
 
+
 def test_end_to_end():
-    # Create a sample dataset
-    df = pd.DataFrame(
-        {
-            "feature1": np.random.rand(100),
-            "feature2": np.random.rand(100),
-            "target": np.random.rand(100),
-        }
-    )
-    # Preprocess
-    df_clean = clean_data(df)
-    df_trans = transform_data(df_clean)
-    # Train model
-    model, mse = train_and_save_model(
-        df_trans, "target", model_path="models/test_model.joblib"
-    )
+    from src.data_preprocessing import preprocess_train_data, preprocess_test_data
+    from src.train_model import train_and_validate
+    from src.predict import load_model, predict_test_set
+
+    # Paths
+    train_path = "data/train.csv"
+    test_path = "data/test.csv"
+    model_path = "models/test_model.joblib"
+    target_col = "units_sold"
+
+    # Preprocess train and test
+    train_df = preprocess_train_data(train_path, target_col=target_col)
+    test_df = preprocess_test_data(test_path)
+
+    # Train and validate
+    model, mse = train_and_validate(train_df, target_col=target_col, model_path=model_path)
     assert model is not None
     assert mse >= 0
-    # Predict
-    model_loaded = load_model("models/test_model.joblib")
-    input_df = df_trans.drop(columns=["target"])
-    preds = predict(model_loaded, input_df)
-    assert len(preds) == len(input_df)
-    print("End-to-end test passed. Predictions:", preds[:5])
+    print(f"Validation MSE: {mse}")
+
+    # Predict on test set
+    model_loaded = load_model(model_path)
+    preds = predict_test_set(model_loaded, test_df)
+    assert len(preds) == len(test_df)
+    print("Test set predictions (first 5):", preds[:5])
 
 
 if __name__ == "__main__":

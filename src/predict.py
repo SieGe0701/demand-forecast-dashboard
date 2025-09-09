@@ -31,3 +31,7 @@ def predict(model, input_df: pd.DataFrame, return_interval: bool = False, alpha:
             # For other models, return None for intervals
             return preds, None, None
     return preds
+
+def predict_test_set(model, test_df: pd.DataFrame):
+    """Predict target for test set (no target column)."""
+    return predict(model, test_df)

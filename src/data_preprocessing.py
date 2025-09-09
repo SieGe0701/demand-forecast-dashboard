@@ -1,3 +1,6 @@
+# ...existing code...
+
+
 # Data preprocessing script
 """
 Generic data preprocessing module for demand forecasting.
@@ -5,7 +8,6 @@ Functions can be used with any tabular dataset (CSV, Excel, etc).
 """
 
 import pandas as pd
-
 
 def load_data(filepath: str) -> pd.DataFrame:
     """Load dataset from a file path."""
@@ -96,4 +98,18 @@ def transform_data(
         df[num_cols] = scaler.fit_transform(df[num_cols])
 
     df = df.dropna().reset_index(drop=True)
+    return df
+
+def preprocess_train_data(filepath: str, target_col: str = 'units_sold') -> pd.DataFrame:
+    """Load, clean, and transform training data."""
+    df = load_data(filepath)
+    df = clean_data(df)
+    df = transform_data(df, target_col=target_col)
+    return df
+
+def preprocess_test_data(filepath: str) -> pd.DataFrame:
+    """Load, clean, and transform test data (no target)."""
+    df = load_data(filepath)
+    df = clean_data(df)
+    df = transform_data(df)
     return df
