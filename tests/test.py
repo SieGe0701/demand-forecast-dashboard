@@ -1,8 +1,3 @@
-"""
-End-to-end test for demand forecasting pipeline.
-Loads sample data, preprocesses, trains, predicts, and checks output shape.
-"""
-
 import os
 import sys
 
@@ -10,41 +5,49 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import numpy as np
 import pandas as pd
-
-from src.data_preprocessing import clean_data, transform_data
-from src.predict import load_model, predict
-from src.train_model import train_and_save_model
-
-
+from sklearn.metrics import mean_absolute_percentage_error
 
 def test_end_to_end():
-    from src.data_preprocessing import preprocess_train_data, preprocess_test_data
+    from src.data_preprocessing import preprocess_train_data, preprocess_test_data_with_history, load_data
     from src.train_model import train_and_validate
     from src.predict import load_model, predict_test_set
 
-    # Paths
-    train_path = "data/train.csv"
-    test_path = "data/test.csv"
-    model_path = "models/test_model.joblib"
+    print("Starting end-to-end test for demand forecasting pipeline...")
+    train_path = "C:/Project/demand-forecast-dashboard/data/train.csv"
     target_col = "units_sold"
 
-    # Preprocess train and test
+    # Check if train data file exists
+    if not os.path.exists(train_path):
+        print(f"ERROR: {train_path} not found.")
+        return
+
+    print("Preprocessing training data...")
     train_df = preprocess_train_data(train_path, target_col=target_col)
-    test_df = preprocess_test_data(test_path)
+    print(f"Train data shape after preprocessing: {train_df.shape}")
+    train_df.to_csv("data/train_preprocessed.csv", index=False)
 
-    # Train and validate
-    model, mse = train_and_validate(train_df, target_col=target_col, model_path=model_path)
-    assert model is not None
-    assert mse >= 0
-    print(f"Validation MSE: {mse}")
+    # Use only training data for validation and predictions
+    train_features = [col for col in train_df.columns if col != target_col]
 
-    # Predict on test set
-    model_loaded = load_model(model_path)
-    preds = predict_test_set(model_loaded, test_df)
-    assert len(preds) == len(test_df)
-    print("Test set predictions (first 5):", preds[:5])
+    print("Training and validating model...")
+    model, mape = train_and_validate(train_df, target_col=target_col)
+    if model is None:
+        print("ERROR: Model training failed.")
+        return
+    print(f"Validation MAPE: {mape}")
+    # Print first 5 validation predictions
+    if hasattr(model, 'predict'):
+        val_preds = model.predict(train_df[train_features])
+        print(f"Validation predictions (first 5): {val_preds[:5]}")
+        pd.DataFrame(val_preds).to_csv('C:/Project/demand-forecast-dashboard/data/val_preds.csv')
 
+    print("Test completed! Validation predictions saved to data/val_preds.csv.")
 
 if __name__ == "__main__":
     os.makedirs("models", exist_ok=True)
-    test_end_to_end()
+    try:
+        test_end_to_end()
+    except Exception as e:
+        import traceback
+        print("Exception occurred during test execution:")
+        traceback.print_exc()

@@ -1,6 +1,3 @@
-# ...existing code...
-
-
 # Data preprocessing script
 """
 Generic data preprocessing module for demand forecasting.
@@ -22,8 +19,8 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 def transform_data(
     df: pd.DataFrame,
     target_col: str = None,
-    lags: int = 12,
-    rolling: int = 7,
+    lags: int = 3,
+    rolling: int = 3,
     scale: bool = True,
     encode_categorical: bool = True,
     add_interactions: bool = True,
@@ -40,7 +37,6 @@ def transform_data(
     - Add custom user-defined features
     """
     import numpy as np
-    from sklearn.preprocessing import StandardScaler
 
     df = df.copy()
 
@@ -70,6 +66,15 @@ def transform_data(
         # Trend feature
         df[f'{target_col}_trend'] = df[target_col] - df[target_col].shift(1)
 
+        # Add ARIMA features
+        try:
+            from statsmodels.tsa.arima.model import ARIMA
+            arima_model = ARIMA(df[target_col], order=(1,0,0)).fit()
+            df[f'{target_col}_arima_fitted'] = arima_model.fittedvalues
+            df[f'{target_col}_arima_resid'] = arima_model.resid
+        except Exception as e:
+            print(f"ARIMA feature generation failed: {e}")
+
     # Encode categorical features
     if encode_categorical:
         cat_cols = df.select_dtypes(include=['object', 'category']).columns
@@ -79,23 +84,14 @@ def transform_data(
     # Handle missing values
     df = df.fillna(df.median(numeric_only=True)).fillna(0)
 
-    # Add interaction features
-    if add_interactions:
-        num_cols = df.select_dtypes(include=[np.number]).columns
-        for i, col1 in enumerate(num_cols):
-            for col2 in num_cols[i+1:]:
-                df[f'{col1}_x_{col2}'] = df[col1] * df[col2]
+    # Exclude all interaction features for now
 
     # Add custom user-defined features
     if custom_features:
         for name, func in custom_features.items():
             df[name] = func(df)
 
-    # Scale numeric features
-    if scale:
-        scaler = StandardScaler()
-        num_cols = df.select_dtypes(include=[np.number]).columns
-        df[num_cols] = scaler.fit_transform(df[num_cols])
+    # Feature scaling removed
 
     df = df.dropna().reset_index(drop=True)
     return df
@@ -113,3 +109,23 @@ def preprocess_test_data(filepath: str) -> pd.DataFrame:
     df = clean_data(df)
     df = transform_data(df)
     return df
+
+def preprocess_test_data_with_history(test_filepath: str, train_df: pd.DataFrame, target_col: str = 'units_sold', lags: int = 12, rolling: int = 7) -> pd.DataFrame:
+    """
+    Preprocess test data using train history for lag/rolling features.
+    Appends last lags rows of train_df to test_df, computes features, then returns only test rows.
+    """
+    test_df = load_data(test_filepath)
+    test_df = clean_data(test_df)
+    # Get last lags rows from train_df
+    history_df = train_df.tail(lags).copy()
+    # Concatenate history and test
+    combined_df = pd.concat([history_df, test_df], ignore_index=True)
+    # Compute features
+    combined_df = transform_data(combined_df, target_col=target_col, lags=lags, rolling=rolling)
+    # Remove history rows
+    test_features_df = combined_df.iloc[lags:].reset_index(drop=True)
+    # Drop target column if present
+    if target_col in test_features_df.columns:
+        test_features_df = test_features_df.drop(columns=[target_col])
+    return test_features_df
