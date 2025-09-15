@@ -4,6 +4,10 @@ __pycache__/
 *.pyo
 *.pyd
 *.pyc
+.joblib
+.csv
+dashboard/.streamlit/
+dashboard/__pycache__/
 *.env
 .env
 .venv/
@@ -49,6 +53,10 @@ htmlcov/
 
 # Pre-commit
 .pre-commit-config.yaml
+*.joblib
+*.csv
+dashboard/.streamlit/
+dashboard/__pycache__/
 
 # Models
 models/

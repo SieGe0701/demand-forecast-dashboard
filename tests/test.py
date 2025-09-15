@@ -8,9 +8,9 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error
 
 def test_end_to_end():
-    from src.data_preprocessing import preprocess_train_data, preprocess_test_data_with_history, load_data
+    from src.data_preprocessing import preprocess_train_data, load_data
     from src.train_model import train_and_validate
-    from src.predict import load_model, predict_test_set
+    from src.predict import load_model, predict_for_sku_month
 
     print("Starting end-to-end test for demand forecasting pipeline...")
     train_path = "C:/Project/demand-forecast-dashboard/data/train.csv"
@@ -27,21 +27,39 @@ def test_end_to_end():
     train_df.to_csv("data/train_preprocessed.csv", index=False)
 
     # Use only training data for validation and predictions
-    train_features = [col for col in train_df.columns if col != target_col]
+    train_features = [col for col in train_df.columns if col not in [target_col, 'product_id']]
 
+    # Train model
     print("Training and validating model...")
-    model, mape = train_and_validate(train_df, target_col=target_col)
+    model, mape = train_and_validate(train_df, target_col=target_col, feature_cols=train_features)
     if model is None:
         print("ERROR: Model training failed.")
         return
     print(f"Validation MAPE: {mape}")
-    # Print first 5 validation predictions
+    # Print first 5 validation predictions and calculate MAPE
     if hasattr(model, 'predict'):
         val_preds = model.predict(train_df[train_features])
         print(f"Validation predictions (first 5): {val_preds[:5]}")
         pd.DataFrame(val_preds).to_csv('C:/Project/demand-forecast-dashboard/data/val_preds.csv')
+        # Calculate and print MAPE for validation set
+        val_mape = mean_absolute_percentage_error(train_df[target_col], val_preds)
+        print(f"Validation MAPE (entire train set): {val_mape}")
 
-    print("Test completed! Validation predictions saved to data/val_preds.csv.")
+    # Save model
+    import joblib
+    joblib.dump(model, "models/xgboost.joblib")
+
+    # End-to-end prediction test
+    print("Testing prediction for a sample store_id, sku_id, fiscal_month...")
+    # Use first row from train_df for test
+    sample = train_df.iloc[0]
+    store_id = int(sample['store_id'])
+    sku_id = int(sample['sku_id'])
+    fiscal_month = int(sample['fiscal_month'])
+    result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=201303)
+    print(f"Prediction result: {result}")
+
+    print("Test completed! End-to-end workflow validated.")
 
 if __name__ == "__main__":
     os.makedirs("models", exist_ok=True)

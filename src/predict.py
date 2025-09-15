@@ -1,25 +1,60 @@
-# Prediction script
 """
-Generic prediction module for demand forecasting.
-Works with any tabular input and trained model.
+Prediction script for demand forecasting.
+Takes store_id, sku_id, and fiscal_month as input, creates product_id internally, and returns prediction for product_id and fiscal_month.
 """
 
-import joblib
 import pandas as pd
+import joblib
+from src.data_preprocessing import load_data, clean_data, transform_data
 
 
-def load_model():
+
+def load_model(model_path="models/xgboost.joblib"):
     """Load the trained XGBoost model from disk."""
-    return joblib.load("models/xgboost.joblib")
+    return joblib.load(model_path)
 
-
-
-def predict(model, input_df: pd.DataFrame):
+def predict_for_sku_month(store_id, sku_id, fiscal_month, model=None, data_path="data/train_preprocessed.csv"):
     """
-    Make predictions using the loaded XGBoost model and input DataFrame.
+    Predict demand for a given store_id, sku_id, and fiscal_month.
+    Internally creates product_id and predicts for product_id, fiscal_month.
+    Returns: (product_id, fiscal_month, prediction)
     """
-    return model.predict(input_df)
-
-def predict_test_set(model, test_df: pd.DataFrame):
-    """Predict target for test set (no target column)."""
-    return predict(model, test_df)
+    # Create product_id
+    product_id = f"{store_id}_{sku_id}"
+    # Load preprocessed data
+    df = load_data(data_path)
+    df = clean_data(df)
+    # Filter for product_id
+    product_df = df[(df["product_id"] == product_id)].copy()
+    if product_df.empty:
+        raise ValueError(f"No data found for product_id {product_id}")
+    # Ensure store_id and sku_id columns exist after filtering
+    if 'store_id' not in product_df.columns or 'sku_id' not in product_df.columns:
+        product_df[['store_id', 'sku_id']] = product_df['product_id'].str.split('_', expand=True)
+        product_df['store_id'] = product_df['store_id'].astype(int)
+        product_df['sku_id'] = product_df['sku_id'].astype(int)
+    # Append a new row for the requested fiscal_month
+    new_row = product_df.iloc[-1:].copy()
+    new_row["fiscal_month"] = int(fiscal_month)
+    product_df = pd.concat([product_df, new_row], ignore_index=True)
+    # Feature engineering for prediction
+    features_df = transform_data(product_df, target_col="units_sold", lags=3, rolling=3)
+    # Select only the last row (the prediction target)
+    input_features = features_df.iloc[[-1]].drop(columns=["units_sold", "product_id"], errors="ignore")
+    # Drop 'year' and 'month' if present
+    for col in ["year", "month"]:
+        if col in input_features.columns:
+            input_features = input_features.drop(columns=[col])
+    # Encode object columns as category codes
+    for col in input_features.select_dtypes(include=['object']).columns:
+        input_features[col] = input_features[col].astype('category').cat.codes
+    # Load model if not provided
+    if model is None:
+        model = load_model()
+    # Predict
+    pred = model.predict(input_features)[0]
+    return {
+        "product_id": product_id,
+        "fiscal_month": fiscal_month,
+        "prediction": pred
+    }

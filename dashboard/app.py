@@ -1,45 +1,64 @@
-"""
-Streamlit dashboard for demand forecasting.
-Works with any tabular dataset.
-"""
-
-import os
 
 import streamlit as st
+import pandas as pd
+import requests
+import plotly.express as px
 
-from src.data_preprocessing import clean_data, load_data, transform_data
-from src.predict import load_model, predict
-from src.train_model import train_and_save_model
-
-st.title("Demand Forecast Dashboard")
+st.set_page_config(page_title="Demand Forecast Dashboard", layout="wide")
+st.title("📈 Demand Forecast Dashboard")
 
 
-# Select train and test files
-st.subheader("Select Train and Test Files")
-train_file = st.file_uploader("Upload train set (CSV)", type=["csv"], key="train")
-test_file = st.file_uploader("Upload test set (CSV)", type=["csv"], key="test")
+st.sidebar.header("Prediction Input")
+sku_id = st.sidebar.text_input("SKU ID", "1001")
+month = st.sidebar.text_input("Month (yyyymm)", "202509")
 
-if train_file:
-    train_df = load_data(train_file)
-    st.write("Train Data", train_df.head())
-    target_col = st.selectbox("Select target column", train_df.columns)
-    train_df = clean_data(train_df)
-    train_df = transform_data(train_df, target_col=target_col)
-    if st.button("Train Model"):
-        model, mse = train_and_save_model(train_df, target_col)
-        st.success(f"Model trained! Validation MSE: {mse}")
+if st.sidebar.button("Predict Demand"):
+    with st.spinner("Requesting prediction from API..."):
+        try:
+            response = requests.post(
+                "http://localhost:8000/predict",
+                json={"sku_id": sku_id, "month": month}
+            )
+            if response.status_code == 200:
+                preds = response.json()["predictions"]
+                st.success(f"Predicted units sold: {preds[0]}")
+            else:
+                st.error(f"API error: {response.text}")
+        except Exception as e:
+            st.error(f"Connection error: {e}")
 
-if test_file and os.path.exists("models/model.joblib"):
-    test_df = load_data(test_file)
-    st.write("Test Data", test_df.head())
-    test_df = clean_data(test_df)
-    test_df = transform_data(test_df)
-    model = load_model()
-    preds = predict(model, test_df)
-    st.write("Test Set Predictions", preds)
-    # Optionally export predictions
-    if st.button("Export Predictions"):
-        out_df = test_df.copy()
-        out_df["predicted_units_sold"] = preds
-        out_df.to_csv("data/test_predictions.csv", index=False)
-        st.success("Predictions exported to data/test_predictions.csv")
+st.markdown("---")
+st.header("Historical Performance & Trends")
+
+# Load and plot historical data (customize path and columns)
+try:
+    df = pd.read_csv("C:/Project/demand-forecast-dashboard/data/train_preprocessed.csv")
+    if sku_id:
+        sku_df = df[df["sku_id"] == int(sku_id)]
+        if not sku_df.empty:
+            fig = px.line(sku_df, x="week", y="units_sold", title=f"Units Sold Over Time for SKU {sku_id}")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info(f"No historical data for SKU {sku_id}.")
+    else:
+        fig = px.line(df, x="week", y="units_sold", title="Units Sold Over Time (by Week)")
+        st.plotly_chart(fig, use_container_width=True)
+    st.subheader("Feature Correlations")
+    corr = df.corr()
+    st.dataframe(corr)
+    fig_corr = px.imshow(corr, text_auto=True, aspect="auto", title="Feature Correlation Heatmap")
+    st.plotly_chart(fig_corr, use_container_width=True)
+except Exception as e:
+    st.warning(f"Could not load historical data: {e}")
+
+st.markdown("---")
+st.header("Model Validation")
+try:
+    val_preds = pd.read_csv("C:/Project/demand-forecast-dashboard/data/val_preds.csv")
+    st.subheader("Sample Validation Predictions")
+    st.dataframe(val_preds.head(10))
+except Exception as e:
+    st.info("No validation predictions found.")
+
+st.markdown("---")
+st.caption("© 2025 Demand Forecast Dashboard | Powered by XGBoost & FastAPI")
