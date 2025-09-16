@@ -1,9 +1,8 @@
-
 from fastapi import FastAPI, Request
 import pandas as pd
-from src.data_preprocessing import preprocess_train_data, preprocess_test_data
+from src.data_preprocessing import preprocess_train_data
 from src.train_model import train_and_validate
-from src.predict import load_model, predict
+from src.predict import load_model
 
 app = FastAPI()
 model = None
@@ -27,41 +26,21 @@ async def train_endpoint(request: Request):
 @app.post("/predict")
 async def predict_endpoint(request: Request):
     payload = await request.json()
+    store_id = payload.get("store_id")
     sku_id = payload.get("sku_id")
-    month = payload.get("month")  # yyyymm format
+    fiscal_month = payload.get("fiscal_month")  # yyyymm format
     global model
     if model is None:
         model = load_model()
-    if sku_id is None or month is None:
-        return {"error": "sku_id and month (yyyymm) are required"}
-    # Parse year and month
+    if store_id is None or sku_id is None or fiscal_month is None:
+        return {"error": "store_id, sku_id, and fiscal_month (yyyymm) are required"}
+    from src.predict import predict_for_sku_month
     try:
-        year = int(str(month)[:4])
-        mon = int(str(month)[4:])
-    except Exception:
-        return {"error": "month must be in yyyymm format"}
-    # Load historical data
-    import pandas as pd
-    from src.data_preprocessing import load_data, clean_data, transform_data
-    df = load_data("data/train_preprocessed.csv")
-    df = clean_data(df)
-    # Filter for the requested sku_id
-    sku_df = df[df["sku_id"] == int(sku_id)].copy()
-    # Append a new row for the requested month
-    new_row = sku_df.iloc[-1:].copy()
-    new_row["year"] = year
-    new_row["month"] = mon
-    sku_df = pd.concat([sku_df, new_row], ignore_index=True)
-    # Generate features for the new month
-    features_df = transform_data(sku_df, target_col="units_sold", lags=3, rolling=3)
-    # Select only the last row (the prediction target)
-    input_features = features_df.iloc[[-1]].drop(columns=["units_sold"])
-    # Drop 'year' and 'month' if present
-    for col in ["year", "month"]:
-        if col in input_features.columns:
-            input_features = input_features.drop(columns=[col])
-    # Encode object columns as category codes
-    for col in input_features.select_dtypes(include=['object']).columns:
-        input_features[col] = input_features[col].astype('category').cat.codes
-    preds = predict(model, input_features)
-    return {"predictions": preds.tolist()}
+        result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=fiscal_month, model=model)
+        return {
+            "product_id": result["product_id"],
+            "fiscal_month": result["fiscal_month"],
+            "prediction": float(result["prediction"])
+        }
+    except Exception as e:
+        return {"error": str(e)}
