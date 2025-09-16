@@ -74,6 +74,18 @@ try:
                 )
                 chart = line + pred_line
         st.altair_chart(chart, use_container_width=True)
+        # Display predicted value for the requested fiscal_month
+        if fiscal_month and int(fiscal_month) > int(product_df['fiscal_month'].max()):
+            try:
+                resp = requests.post(
+                    "http://localhost:8000/predict",
+                    json={"store_id": store_id, "sku_id": sku_id, "fiscal_month": fiscal_month}
+                )
+                if resp.status_code == 200 and "prediction" in resp.json():
+                    pred_value = resp.json()["prediction"]
+                    st.success(f"**Predicted units sold for {product_id} in {fiscal_month}: {pred_value:.2f}**")
+            except Exception as e:
+                st.warning(f"Prediction request failed: {e}")
     else:
         st.info(f"Not enough valid data to plot a line graph for Product ID {product_id}. Please check your input or data file.")
 except Exception as e:

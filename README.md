@@ -112,3 +112,44 @@ A robust, production-ready demand forecasting solution with:
 ## 9. License
 MIT
 
+---
+
+## 10. CI/CD, Docker, and GKE Deployment
+
+### CI/CD Pipeline (GitHub Actions)
+This project includes a GitHub Actions workflow for automated testing, Docker image build/push, and deployment to Google Kubernetes Engine (GKE).
+
+#### 1. Configure Secrets
+Add the following secrets to your GitHub repository:
+- `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`: Docker Hub credentials for pushing images
+- `GCP_PROJECT_ID`: Your Google Cloud project ID
+- `GCP_SA_KEY`: Base64-encoded service account JSON with GKE/Kubernetes permissions
+- `GKE_CLUSTER_NAME`: Name of your GKE cluster
+- `GKE_ZONE`: Zone of your GKE cluster
+
+#### 2. Workflow Steps
+- On push/PR to `main`, the workflow will:
+  1. Run tests
+  2. Build and push Docker images for API and dashboard to Docker Hub
+  3. Update Kubernetes manifests with the correct image names
+  4. Deploy to GKE using `kubectl apply -f k8s/`
+
+#### 3. Manual Docker Build & Push (Optional)
+If you want to build and push images manually:
+```powershell
+# API image
+docker build --target api -t <dockerhub-username>/demand-api:latest .
+docker push <dockerhub-username>/demand-api:latest
+# Dashboard image
+docker build --target dashboard -t <dockerhub-username>/demand-dashboard:latest .
+docker push <dockerhub-username>/demand-dashboard:latest
+```
+
+#### 4. Manual GKE Deployment (Optional)
+Update the image names in `k8s/api-deployment.yaml` and `k8s/dashboard-deployment.yaml` to match your Docker Hub images, then run:
+```sh
+kubectl apply -f k8s/
+```
+
+---
+

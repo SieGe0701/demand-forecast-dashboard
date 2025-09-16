@@ -8,9 +8,9 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error
 
 def test_end_to_end():
-    from src.data_preprocessing import preprocess_train_data, load_data
+    from src.data_preprocessing import preprocess_train_data
     from src.train_model import train_and_validate
-    from src.predict import load_model, predict_for_sku_month
+    from src.predict import predict_for_sku_month
 
     print("Starting end-to-end test for demand forecasting pipeline...")
     train_path = "C:/Project/demand-forecast-dashboard/data/train.csv"
@@ -55,7 +55,6 @@ def test_end_to_end():
     sample = train_df.iloc[0]
     store_id = int(sample['store_id'])
     sku_id = int(sample['sku_id'])
-    fiscal_month = int(sample['fiscal_month'])
     result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=201303)
     print(f"Prediction result: {result}")
 
