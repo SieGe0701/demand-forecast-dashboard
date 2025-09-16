@@ -18,7 +18,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 def transform_data(
     df: pd.DataFrame,
     target_col: str = None,
-    lags: int = 3,
+    lags: int = 12,
     rolling: int = 3,
     encode_categorical: bool = True,
     custom_features: dict = None
