@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demand-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demand-api
+  template:
+    metadata:
+      labels:
+        app: demand-api
+    spec:
+      containers:
+      - name: api
+        image: <YOUR_API_IMAGE>
+        command: [".venv/bin/uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        ports:
+        - containerPort: 8000
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"

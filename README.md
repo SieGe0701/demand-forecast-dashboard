@@ -1,99 +1,114 @@
-## Demand Forecast Dashboard
+# Demand Forecast Dashboard (End-to-End Solution)
 
-An end-to-end demand forecasting dashboard with CI/CD (MLOps) pipeline. This project includes data preprocessing, model training, prediction API, and an interactive dashboard for visualization. Automated testing and deployment are integrated using CI/CD best practices.
+## Overview
+A robust, production-ready demand forecasting solution with:
+- Data preprocessing and feature engineering
+- XGBoost model training and validation
+- FastAPI for real-time predictions
+- Streamlit dashboard for visualization
+- Sequential forecasting for future months
 
-### Features
-- Data preprocessing and cleaning
-- Model training and evaluation
-- REST API for predictions
-- Interactive dashboard (e.g., Streamlit)
-- Automated testing (pytest)
-- Dockerized deployment
-- CI/CD pipeline for automated build, test, and deploy
+---
+
+## 1. Setup
 
 ### Prerequisites
 - Python 3.8+
-- Docker
-- Git
-- Recommended: VS Code
+- (Recommended) Create a virtual environment:
+  ```powershell
+  python -m venv .venv
+  .\.venv\Scripts\activate
+  ```
+- Install dependencies:
+  ```powershell
+  pip install -r requirements.txt
+  ```
 
-### Setup
-1. Clone the repository:
-	```powershell
-	git clone https://github.com/SieGe0701/demand-forecast-dashboard.git
-	cd demand-forecast-dashboard
-	```
-2. Install dependencies:
-	```powershell
-	pip install -r requirements.txt
-	```
-3. Run tests:
-	```powershell
-	pytest tests/
-	```
-4. Build and run with Docker:
-	```powershell
-	docker build -t demand-forecast-dashboard .
-	docker run -p 8501:8501 demand-forecast-dashboard
-	```
+---
 
+## 2. Data Preprocessing
 
-### Usage
+- Place your raw data in `data/train.csv`.
+- Run preprocessing (optional, handled in test script):
+  ```powershell
+  python -c "from src.data_preprocessing import preprocess_train_data; df = preprocess_train_data('data/train.csv', target_col='units_sold'); df.to_csv('data/train_preprocessed.csv', index=False)"
+  ```
 
-#### Add Your Data
-- Place your dataset (e.g., `data.csv`) in the `data/` folder.
-- You can use any tabular format (CSV recommended).
+---
 
-#### Dashboard
-- Start the dashboard: `python dashboard/app.py` or `streamlit run dashboard/app.py`
-- Upload your dataset via the dashboard interface or use the file in `data/`.
-- Select the target column and configure feature engineering options.
-- Train the model and view predictions directly in the dashboard.
+## 3. Model Training & Validation
 
-#### API
-- Start the API: `uvicorn api.main:app --reload --port 8000`
-- Send POST requests to `/predict` with your data as JSON for batch predictions.
+- Run the end-to-end test (preprocess, train, validate, predict):
+  ```powershell
+  python tests/test.py
+  ```
+- Model is saved to `models/xgboost.joblib`.
+- Validation predictions are saved to `data/val_preds.csv`.
 
-#### Scripts
-- Use the functions in `src/` to preprocess, train, and predict programmatically.
-- Example:
-	```python
-	from src.data_preprocessing import load_data, clean_data, transform_data
-	from src.train_model import train_and_save_model
-	from src.predict import load_model, predict
+---
 
-	df = load_data('data/data.csv')
-	df = clean_data(df)
-	df = transform_data(df, target_col='target')
-	model, mse = train_and_save_model(df, 'target')
-	preds = predict(model, df.drop(columns=['target']))
-	```
+## 4. Start the API
 
-#### Access Dashboard
-- Open your browser and go to `http://localhost:8501` after starting the dashboard.
+- Launch FastAPI server:
+  ```powershell
+  .venv\Scripts\uvicorn api.main:app --reload
+  ```
+- Health check: [http://localhost:8000/health](http://localhost:8000/health)
+- Predict endpoint: `POST /predict` with JSON body:
+  ```json
+  { "store_id": "1", "sku_id": "1001", "fiscal_month": "202509" }
+  ```
 
-#### Access API
-- Send requests to `http://localhost:8000/predict` after starting the API.
+---
 
-### CI/CD Workflow
-CI/CD is set up to automatically:
-- Run tests on every push
-- Build Docker image
-- Deploy to cloud (e.g., Azure, AWS, GCP)
+## 5. Start the Dashboard
 
-See `.github/workflows/` for pipeline configuration (to be added).
+- In a new terminal:
+  ```powershell
+  streamlit run dashboard/app.py
+  ```
+- Enter `store_id`, `sku_id`, and `fiscal_month` in the sidebar.
+- View historical and predicted demand in a single line graph.
 
-### Project Structure
+---
+
+## 6. Sequential Forecasting
+- If you request a future month (e.g., 202509), the model will sequentially predict for each missing month, using each prediction as input for the next, until the target month is reached.
+
+---
+
+## 7. Project Structure
 ```
-├── api/                # FastAPI or Flask REST API
-├── dashboard/          # Streamlit or Dash dashboard
-├── src/                # Data preprocessing, model training, prediction
-├── tests/              # Unit tests
-├── requirements.txt    # Python dependencies
-├── Dockerfile          # Containerization
-├── README.md           # Project documentation
+├── api/
+│   └── main.py           # FastAPI app
+├── dashboard/
+│   └── app.py            # Streamlit dashboard
+├── data/
+│   ├── train.csv         # Raw data
+│   ├── train_preprocessed.csv # Preprocessed data
+│   └── val_preds.csv     # Validation predictions
+├── models/
+│   └── xgboost.joblib    # Trained model
+├── src/
+│   ├── data_preprocessing.py
+│   ├── predict.py
+│   └── train_model.py
+├── tests/
+│   └── test.py           # End-to-end test
+├── requirements.txt
+├── Dockerfile (optional)
+└── README.md
 ```
 
-### Contributing
-Pull requests are welcome. For major changes, open an issue first to discuss what you would like to change.
+---
+
+## 8. Tips
+- Make sure the API server is running before using the dashboard.
+- Use the test script to validate the full pipeline after any code/data changes.
+- For production, consider Dockerizing and adding CI/CD.
+
+---
+
+## 9. License
+MIT
 
