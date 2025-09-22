@@ -23,6 +23,7 @@ def transform_data(
     encode_categorical: bool = True,
     custom_features: dict = None
 ) -> pd.DataFrame:
+
     """
     Preprocessing pipeline:
     1. Convert week/date to fiscal_month
@@ -38,6 +39,7 @@ def transform_data(
         df['year'] = df['week'].dt.year
         df['month'] = df['week'].dt.month
         df['fiscal_month'] = df['year'] * 100 + df['month']
+
 
     # Step 1.5: Create a Product id based on store and sku_id
     df['product_id'] = df['store_id'].astype(str) + '_' + df['sku_id'].astype(str)
@@ -59,6 +61,22 @@ def transform_data(
             df[f'{target_col}_rolling_mean_{win}'] = df[target_col].rolling(window=win).mean()
             df[f'{target_col}_rolling_std_{win}'] = df[target_col].rolling(window=win).std()
         df[f'{target_col}_trend'] = df[target_col] - df[target_col].shift(1)
+
+        # Add seasonal decomposition (seasonal component) per product_id
+        try:
+            import statsmodels.api as sm
+            def add_seasonal_component(group):
+                # Use period=12 for monthly data, adjust if needed
+                if len(group) >= 4:
+                    result = sm.tsa.seasonal_decompose(group[target_col], model='additive', period=12, extrapolate_trend='freq')
+                    group['seasonal'] = result.seasonal
+                else:
+                    raise Exception("Not enough data points for seasonal decomposition")
+                return group
+            df = df.groupby('product_id', group_keys=False).apply(add_seasonal_component)
+        except Exception as e:
+            print(f"Seasonal decomposition failed: {e}")
+
         # ARIMA features
         try:
             from statsmodels.tsa.arima.model import ARIMA

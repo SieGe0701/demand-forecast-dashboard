@@ -55,7 +55,7 @@ def test_end_to_end():
     sample = train_df.iloc[0]
     store_id = int(sample['store_id'])
     sku_id = int(sample['sku_id'])
-    result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=201303)
+    result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=201404)
     print(f"Prediction result: {result}")
 
     print("Test completed! End-to-end workflow validated.")

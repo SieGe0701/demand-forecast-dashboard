@@ -34,6 +34,7 @@ def predict_for_sku_month(store_id, sku_id, fiscal_month, model=None, data_path=
         product_df[['store_id', 'sku_id']] = product_df['product_id'].str.split('_', expand=True)
         product_df['store_id'] = product_df['store_id'].astype(int)
         product_df['sku_id'] = product_df['sku_id'].astype(int)
+
     # Find last available fiscal_month
     last_month = int(product_df['fiscal_month'].max())
     target_month = int(fiscal_month)

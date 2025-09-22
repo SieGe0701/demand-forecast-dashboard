@@ -1,5 +1,5 @@
 # Use official Python image
-FROM python:3.10-slim as base
+FROM python:3.12-slim-bookworm@sha256:secure-digest-value as base
 
 # Set work directory
 WORKDIR /app
