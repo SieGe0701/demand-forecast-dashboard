@@ -1,4 +1,25 @@
+
 # Demand Forecast Dashboard (End-to-End Solution)
+
+## Project Description
+Demand Forecast Dashboard is a full-stack, production-ready solution for retail demand forecasting. It combines classical ML (XGBoost) and LLM-based time series forecasting (TimesFM) with a modern API and dashboard interface. The project supports sequential forecasting, quantile prediction, and is designed for cloud-native deployment.
+
+### Key Features
+- Data preprocessing and feature engineering
+- XGBoost and TimesFM model support
+- Real-time predictions via FastAPI
+- Interactive Streamlit dashboard with quantile visualization
+- Sequential forecasting for future months
+- End-to-end tests and integration tests
+- Dockerized for easy deployment
+- Automated CI/CD pipeline (GitHub Actions)
+- GKE-ready Kubernetes manifests and ingress
+
+### Accessing the Deployed App
+- **API:** Accessible via `/api/` path (e.g., `http://<your-domain-or-ip>/api/`)
+- **Dashboard:** Accessible via `/dashboard/` path (e.g., `http://<your-domain-or-ip>/dashboard/`)
+- If using the provided ingress, set up DNS for `demand.local` or use the external IP from `kubectl get ingress`.
+
 
 ## Overview
 A robust, production-ready demand forecasting solution with:
