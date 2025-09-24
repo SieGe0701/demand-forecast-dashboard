@@ -11,17 +11,17 @@ param(
 
 if ($Preprocess) {
     Write-Host "[Preprocessing] Running data preprocessing..."
-    .\.venv\Scripts\python -c "from src.data_preprocessing import preprocess_train_data; df = preprocess_train_data('data/train.csv', target_col='units_sold'); df.to_csv('data/train_preprocessed.csv', index=False)"
+    python -c "from src.data_preprocessing import preprocess_train_data; df = preprocess_train_data('data/train.csv', target_col='units_sold'); df.to_csv('data/train_preprocessed.csv', index=False)"
 }
 
 if ($Train) {
     Write-Host "[Training] Running model training and validation..."
-    .\.venv\Scripts\python tests/test.py
+    python tests/test.py
 }
 
 if ($API) {
     Write-Host "[API] Starting FastAPI server..."
-    .\.venv\Scripts\uvicorn api.main:app --reload
+    uvicorn api.main:app --reload
 }
 
 if ($Dashboard) {
@@ -31,7 +31,7 @@ if ($Dashboard) {
 
 if ($Test) {
     Write-Host "[Test] Running end-to-end test..."
-    .\.venv\Scripts\python tests/test.py
+    python tests/test.py
 }
 
 if ($Clean) {

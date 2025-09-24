@@ -13,7 +13,7 @@ def test_end_to_end():
     from src.predict import predict_for_sku_month
 
     print("Starting end-to-end test for demand forecasting pipeline...")
-    train_path = "C:/Project/demand-forecast-dashboard/data/train.csv"
+    train_path = "data/train.csv"
     target_col = "units_sold"
 
     # Check if train data file exists
@@ -40,7 +40,7 @@ def test_end_to_end():
     if hasattr(model, 'predict'):
         val_preds = model.predict(train_df[train_features])
         print(f"Validation predictions (first 5): {val_preds[:5]}")
-        pd.DataFrame(val_preds).to_csv('C:/Project/demand-forecast-dashboard/data/val_preds.csv')
+        pd.DataFrame(val_preds).to_csv('data/val_preds.csv')
         # Calculate and print MAPE for validation set
         val_mape = mean_absolute_percentage_error(train_df[target_col], val_preds)
         print(f"Validation MAPE (entire train set): {val_mape}")

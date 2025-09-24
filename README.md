@@ -24,6 +24,14 @@ A robust, production-ready demand forecasting solution with:
   pip install -r requirements.txt
   ```
 
+Install TimesFM (required for LLM-based forecasting):
+1. Clone the TimesFM repository (replace with your repo link):
+  ```powershell
+  git clone https://github.com/google-research/timesfm.git
+  cd timesfm
+  pip install -e .
+  ```
+
 ---
 
 ## 2. Data Preprocessing

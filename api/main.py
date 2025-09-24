@@ -36,11 +36,13 @@ async def predict_endpoint(request: Request):
         return {"error": "store_id, sku_id, and fiscal_month (yyyymm) are required"}
     from src.predict import predict_for_sku_month
     try:
-        result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=fiscal_month, model=model)
+        result = predict_for_sku_month(store_id=store_id, sku_id=sku_id, fiscal_month=fiscal_month)
+        print(result)
         return {
             "product_id": result["product_id"],
             "fiscal_month": result["fiscal_month"],
-            "prediction": float(result["prediction"])
+            "prediction": float(result["prediction"]),
+            "quantile_forecast": result["quantile_forecast"]
         }
     except Exception as e:
         return {"error": str(e)}

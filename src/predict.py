@@ -6,20 +6,30 @@ Takes store_id, sku_id, and fiscal_month as input, creates product_id internally
 
 import pandas as pd
 from src.data_preprocessing import load_data, clean_data
-
 from transformers import pipeline
-
-
-
+import timesfm
 
 
 def load_model(model_name="google/timesfm-1.0"):
     """Load the TimesFM pipeline from Hugging Face."""
-    return pipeline("time-series-forecasting", model=model_name)
+    model = timesfm.TimesFM_2p5_200M_torch()
+    model.load_checkpoint()
+    model.compile(
+        timesfm.ForecastConfig(
+        max_context=1024,
+        max_horizon=256,
+        normalize_inputs=True,
+        use_continuous_quantile_head=True,
+        force_flip_invariance=True,
+        infer_is_positive=True,
+        fix_quantile_crossing=True,
+    )
+    )
+    return model
 
 
 
-def predict_for_sku_month(store_id, sku_id, fiscal_month, tsfm_pipe=None, data_path="data/train_preprocessed.csv"):
+def predict_for_sku_month(store_id, sku_id, fiscal_month, data_path="data/train_preprocessed.csv"):
     """
     Predict demand for a given store_id, sku_id, and fiscal_month using TimesFM pipeline.
     Returns: (product_id, fiscal_month, prediction)
@@ -41,13 +51,13 @@ def predict_for_sku_month(store_id, sku_id, fiscal_month, tsfm_pipe=None, data_p
     if horizon <= 0:
         raise ValueError("Target month must be after last available month in data.")
     # Load pipeline if not provided
-    if tsfm_pipe is None:
-        tsfm_pipe = load_model()
+    model = load_model()
     # Run the pipeline
-    result = tsfm_pipe(context, prediction_length=horizon)
-    forecast = result[0]["prediction"]
+    point_forecast, quantile_forecast = model.forecast(horizon=horizon, inputs=[context])
+    prediction = float(point_forecast[0, -1])
     return {
         "product_id": product_id,
         "fiscal_month": target_month,
-        "prediction": float(forecast[-1])
+        "prediction": prediction,
+        "quantile_forecast": quantile_forecast.tolist()
     }
