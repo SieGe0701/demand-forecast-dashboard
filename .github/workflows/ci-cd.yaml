@@ -22,6 +22,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      
+      - name: Install timesfm
+        run: |
+          git clone https://github.com/google-research/timesfm.git
+          cd timesfm
+          pip install -e .
 
       - name: Run tests
         run: |
@@ -33,6 +39,7 @@ jobs:
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      IMAGE_TAG: ${{ github.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,7 +60,7 @@ jobs:
           file: ./Dockerfile
           target: api
           push: true
-          tags: ${{ env.DOCKERHUB_USERNAME }}/demand-api:latest
+          tags: ${{ env.DOCKERHUB_USERNAME }}/demand-api:${{ env.IMAGE_TAG }}
 
       - name: Build and push Dashboard image
         uses: docker/build-push-action@v5
@@ -62,7 +69,7 @@ jobs:
           file: ./Dockerfile
           target: dashboard
           push: true
-          tags: ${{ env.DOCKERHUB_USERNAME }}/demand-dashboard:latest
+          tags: ${{ env.DOCKERHUB_USERNAME }}/demand-dashboard:${{ env.IMAGE_TAG }}
 
   deploy-gke:
     needs: docker-push
@@ -86,11 +93,19 @@ jobs:
 
       - name: Update API image in deployment
         run: |
-          sed -i 's|<YOUR_API_IMAGE>|${{ env.DOCKERHUB_USERNAME }}/demand-api:latest|' k8s/api-deployment.yaml
+          sed -i 's|<YOUR_API_IMAGE>|${{ env.DOCKERHUB_USERNAME }}/demand-api:${{ env.IMAGE_TAG }}|' k8s/api-deployment.yaml
       - name: Update Dashboard image in deployment
         run: |
-          sed -i 's|<YOUR_DASHBOARD_IMAGE>|${{ env.DOCKERHUB_USERNAME }}/demand-dashboard:latest|' k8s/dashboard-deployment.yaml
+          sed -i 's|<YOUR_DASHBOARD_IMAGE>|${{ env.DOCKERHUB_USERNAME }}/demand-dashboard:${{ env.IMAGE_TAG }}|' k8s/dashboard-deployment.yaml
 
       - name: Deploy to GKE
         run: |
           kubectl apply -f k8s/
+
+      - name: Run integration tests
+        run: |
+          # Example: Wait for services to be ready and run integration tests
+          kubectl rollout status deployment/api-deployment -n default
+          kubectl rollout status deployment/dashboard-deployment -n default
+          # Replace with your actual integration test command, e.g.:
+          python tests/integration_test.py || echo "Integration tests not found or failed"
