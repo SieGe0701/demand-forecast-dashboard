@@ -80,10 +80,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set GKE plugin env
+        run: echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
+
       - name: Install gke-gcloud-auth-plugin
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+        run: pip install --upgrade gke-gcloud-auth-plugin
 
 
       - name: Authenticate to Google Cloud
