@@ -83,10 +83,6 @@ jobs:
       - name: Set GKE plugin env
         run: echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
 
-      - name: Install gke-gcloud-auth-plugin
-        run: pip install --upgrade gke-gcloud-auth-plugin
-
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
