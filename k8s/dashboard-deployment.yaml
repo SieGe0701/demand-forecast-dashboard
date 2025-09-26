@@ -14,8 +14,13 @@ spec:
     spec:
       containers:
       - name: dashboard
-        image: <YOUR_DASHBOARD_IMAGE>
-        command: ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+        image: "<YOUR_DASHBOARD_IMAGE>"
+        command:
+          - "streamlit"
+          - "run"
+          - "dashboard/app.py"
+          - "--server.port=8501"
+          - "--server.address=0.0.0.0"
         ports:
         - containerPort: 8501
         env:
