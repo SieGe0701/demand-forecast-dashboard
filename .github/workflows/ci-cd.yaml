@@ -108,6 +108,13 @@ jobs:
         run: |
           sed -i 's|<YOUR_DASHBOARD_IMAGE>|${{ env.DOCKERHUB_USERNAME }}/demand-dashboard:${{ env.IMAGE_TAG }}|' k8s/dashboard-deployment.yaml
 
+      - name: Print updated images
+        run: |
+          UPDATED_API_IMAGE=$(sed -n 's|.*image: \(.*demand-api:.*\)|\1|p' k8s/api-deployment.yaml)
+          UPDATED_DASHBOARD_IMAGE=$(sed -n 's|.*image: \(.*demand-dashboard:.*\)|\1|p' k8s/dashboard-deployment.yaml)
+          echo "Updated API Image: $UPDATED_API_IMAGE"
+          echo "Updated Dashboard Image: $UPDATED_DASHBOARD_IMAGE"
+
       - name: Deploy to GKE
         run: |
           kubectl apply -f k8s/
