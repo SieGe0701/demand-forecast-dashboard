@@ -92,8 +92,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-cloud-cli
 
-      - name: Install gke-cloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin
+      # gke-gcloud-auth-plugin is included with apt-based google-cloud-cli installs
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
